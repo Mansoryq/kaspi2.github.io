@@ -1,0 +1,253 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#ffffff" />
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('service-worker.js');
+  });
+}
+</script>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Удостоверение личности</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: #fff;
+      color: #000;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      font-weight: 500;
+      font-size: 1.1rem;
+      border-bottom: 1px solid #ccc;
+    }
+    .back-arrow {
+      font-size: 1.4rem;
+      margin-right: 1rem;
+      color: #e53935;
+      cursor: default;
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #ccc;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 0.8rem;
+      cursor: pointer;
+      color: #666;
+      font-weight: 500;
+      font-size: 0.95rem;
+      border: 1px solid #e53935;
+    }
+    .tab.active {
+      color: #fff;
+      background-color: #e53935;
+    }
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+    .section {
+      display: none;
+    }
+    .section.active {
+      display: block;
+    }
+    #imageInput {
+      display: block;
+      margin-bottom: 1rem;
+    }
+    .id-card-img {
+      width: 100%;
+      max-height: 400px;
+      border-radius: 10px;
+      object-fit: contain;
+    }
+    .field {
+      margin-bottom: 0.8rem;
+    }
+    .field label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+    .field input {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    .btn-container {
+      padding: 0.7rem;
+      border-top: 1px solid #ccc;
+      background: #fff;
+    }
+    button {
+      width: 100%;
+      padding: 0.9rem;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      background-color: #1976d2;
+      color: white;
+      margin-bottom: 0.6rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .btn-outline {
+      background-color: #fff;
+      color: #1976d2;
+      border: 2px solid #1976d2;
+    }
+    #qrModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000000cc;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #qrModalContent {
+      background: #fff;
+      padding: 1.5rem;
+      border-radius: 10px;
+      text-align: center;
+    }
+    #qrcode canvas {
+      width: 120px !important;
+      height: 120px !important;
+    }
+    svg {
+      width: 20px;
+      height: 20px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="back-arrow">←</span>
+    Удостоверение личности
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">Документ</div>
+    <div class="tab" onclick="switchTab(1)">Реквизиты</div>
+  </div>
+
+  <div class="content">
+    <div class="section active" id="docSection">
+      <input type="file" accept="image/*" id="imageInput" />
+      <img id="idImage" class="id-card-img" style="display:none;" />
+    </div>
+
+    <div class="section" id="detailsSection">
+      <div class="field"><label>ИИН</label><input type="text" id="iinField"></div>
+      <div class="field"><label>Номер паспорта</label><input type="text" id="passportField"></div>
+      <div class="field"><label>Дата рождения</label><input type="text" id="dobField"></div>
+      <div class="field"><label>Дата выдачи</label><input type="text" id="issueField"></div>
+      <div class="field"><label>Срок действия</label><input type="text" id="expiryField"></div>
+    </div>
+  </div>
+
+  <div class="btn-container">
+    <button onclick="showQR()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M3 3h6v6H3V3zm12 0h6v6h-6V3zM3 15h6v6H3v-6zm12 6h6v-6h-6v6z"/>
+      </svg>
+      Предъявить документ
+    </button>
+    <button class="btn-outline" onclick="alert('Реквизиты отправлены!')">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#1976d2" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M4 4h16v16H4V4zm0 0l8 8 8-8"/>
+      </svg>
+      Отправить реквизиты
+    </button>
+  </div>
+
+  <div id="qrModal">
+    <div id="qrModalContent">
+      <div id="qrcode"></div>
+      <button onclick="hideQR()" style="margin-top:1rem;">Закрыть</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    function switchTab(index) {
+      const tabs = document.querySelectorAll('.tab');
+      const sections = document.querySelectorAll('.section');
+      tabs.forEach((tab, i) => {
+        tab.classList.toggle('active', i === index);
+        sections[i].classList.toggle('active', i === index);
+      });
+    }
+
+    const imageInput = document.getElementById('imageInput');
+    const idImage = document.getElementById('idImage');
+    const savedImage = localStorage.getItem('customIdImage');
+    if (savedImage) {
+      idImage.src = savedImage;
+      idImage.style.display = 'block'; imageInput.style.display = "none";
+    }
+
+    imageInput.addEventListener('change', function () {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          idImage.src = e.target.result;
+          idImage.style.display = 'block'; imageInput.style.display = "none";
+          localStorage.setItem('customIdImage', e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    const fields = ["iinField", "passportField", "dobField", "issueField", "expiryField"];
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      el.value = localStorage.getItem(id) || "";
+      el.addEventListener("input", () => {
+        localStorage.setItem(id, el.value);
+      });
+    });
+
+    function showQR() {
+      const random = Math.floor(100000 + Math.random() * 900000);
+      const text = "Код проверки: #" + random;
+      document.getElementById("qrModal").style.display = "flex";
+      document.getElementById("qrcode").innerHTML = "";
+      new QRCode(document.getElementById("qrcode"), text);
+    }
+
+    function hideQR() {
+      document.getElementById("qrModal").style.display = "none";
+    }
+  </script>
+</body>
+</html>
